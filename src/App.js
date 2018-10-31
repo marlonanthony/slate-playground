@@ -1,28 +1,85 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
+import { Editor } from 'slate-react' 
+import { Value } from 'slate' 
 import './App.css';
 
-class App extends Component {
-  render() {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
-      </div>
-    );
+const initialValue = Value.fromJSON({
+  document: {
+    nodes: [
+      {
+        object: 'block',
+        type: 'paragraph', 
+        nodes: [
+          {
+            object: 'text',
+            leaves: [
+              {
+                text: 'A line of text in a paragraph.'
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+})
+
+const MarkHotKey = (options) => {
+  const { type, key } = options 
+
+  return {
+    onKeyDown(event, editor, next) {
+      if(!event.ctrlKey || event.key !== key) return next()
+      event.preventDefault()
+      editor.toggleMark(type)
+    }
   }
 }
 
-export default App;
+const plugins = [
+  MarkHotKey({ key: 'b', type: 'bold' }),
+  MarkHotKey({ key: '`', type: 'code' }),
+  MarkHotKey({ key: 'i', type: 'italic' }),
+  MarkHotKey({ key: '-', type: 'strikethrough' }),
+  MarkHotKey({ key: 'u', type: 'underline' }),
+] 
+
+class App extends Component {
+
+  state = { value: initialValue }
+
+  onChange = ({ value }) => {
+    this.setState({ value })
+  }
+
+  render() {
+    return (
+      <Editor 
+        className="App" 
+        plugins={plugins}
+        value={this.state.value} 
+        onChange={this.onChange}
+        renderMark={this.renderMark}>
+      </Editor>
+    );
+  }
+
+  renderMark = (props, editor, next) => {
+    switch(props.mark.type) {
+      case 'bold': 
+        return <strong>{props.children}</strong>
+      case 'code':
+        return <code>{props.children}</code>
+      case 'italic':
+        return <em>{props.children}</em>
+      case 'strikethrough':
+        return <del>{props.children}</del>
+      case 'underline':
+        return <u>{props.children}</u>
+      default: 
+        return next() 
+    }
+  }
+}
+
+export default App
